@@ -41,17 +41,17 @@ public class HTTPClient
                   //    while (!quit)
                   //  {
                   System.out.println("Enter 1 for GET and 2 for POST");
-                  int choice = (scnr.nextInt());
-                  if (choice == 1)
+                  String choice = (scnr.nextLine());
+                  if (choice.equals("1"))
                   {
                      System.out.println(" before sendGet");
                      sendGet(out);
                      System.out.println(getResponse(in));
                   }
-                  else if (choice == 2)
+                  else if (choice.equals("2"))
                   {
                      System.out.println("Enter Diary message");
-                     input = scnr.next();
+                     input = scnr.nextLine();
                      if (!(input.equals("quit")))
                      {
                         sendPost(input, out);
