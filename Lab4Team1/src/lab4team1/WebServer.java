@@ -18,11 +18,12 @@ public class WebServer
     private static final String SERVERSTARTED = "Web server started";
     private static final String WAITINGONCONNECTION = "Waiting for a client request";
     private static final String CONNECTED = "Connection made";
-    private static final int PORTNUMBER = 80;
+    private static final int PORTNUMBER = 8080;
     
     public WebServer()
     {
         System.out.println(SERVERSTARTED);
+        
     }
     
     /**
@@ -32,6 +33,7 @@ public class WebServer
      */
     public void start() throws IOException
     {
+       Diary diary = new Diary();
         try (ServerSocket serverSocket = new ServerSocket(PORTNUMBER))
         {
             while(true)
@@ -39,12 +41,17 @@ public class WebServer
                 System.out.println(WAITINGONCONNECTION);
                 Socket remote = serverSocket.accept();
                 System.out.println(CONNECTED);
-                new Thread(new ClientHandler(remote)).start();
+                //new Thread(new ClientHandler(remote)).start();
+                ClientHandler clientHandler = new ClientHandler(remote, diary);
+                Thread client = new Thread(clientHandler);
+                
+                      
+                client.start();
             }
         }
         catch (IOException ioEx)
         {
-            
+            System.out.println("3" + ioEx);
         }
     }
 }

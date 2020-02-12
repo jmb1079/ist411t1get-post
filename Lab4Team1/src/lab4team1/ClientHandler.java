@@ -18,96 +18,126 @@ import java.util.StringTokenizer;
 
 public class ClientHandler implements Runnable
 {
-    private final Socket socket;
-    private static final String HANDLERSTARTED = "\nClientHandler Started for ";
-    private static final String HANDLERTERMINATED = "ClientHandler Terminated for ";
-    private static final String GETPROCESSED = "Get method processed";
-    private static final String UNRECOGNIZEDMETHOD = "The HTTP method is not recognized";
-    private static final String WELCOME = "<html><h1>WebServer Home Page... </h1><br><b>Welcome to my web server!</b><br></html>";
-    private static final String STATUS = "HTTP/1.0 %d %s";
-    private static final String NEWLINE = "\r\n";
-    private static final String METHODNOTALLOWED = "Method Not Allowed";
-    private static final String OK = "OK";
-    private static final int NOTFOUNDCODE = 404;
-    private static final String NOTFOUND = "NOT FOUND";
-    private static final String CONTENTLENGTH = "Content-Length: ";
-    private static final String SERVERHEADER = "Server: WebServer" + NEWLINE;
-    private static final String CONTENTTYPEHEADER = "Content-Type: text/html" + NEWLINE;
+
+   private final Socket socket;
+   private static final String HANDLERSTARTED = "\nClientHandler Started for ";
+   private static final String HANDLERTERMINATED = "ClientHandler Terminated for ";
+   private static final String GETPROCESSED = "Get method processed";
+   private static final String UNRECOGNIZEDMETHOD = "The HTTP method is not recognized";
+   private static final String WELCOME = "<html><h1>WebServer Home Page... </h1><br><b>Welcome to my web server!</b><br></html>";
+   private static final String STATUS = "HTTP/1.0 %d %s";
+   private static final String NEWLINE = "\r\n";
+   private static final String METHODNOTALLOWED = "Method Not Allowed";
+   private static final String OK = "OK";
+   private static final int NOTFOUNDCODE = 404;
+   private static final String NOTFOUND = "NOT FOUND";
+   private static final String CONTENTLENGTH = "Content-Length: ";
+   private static final String SERVERHEADER = "Server: WebServer" + NEWLINE;
+   private static final String CONTENTTYPEHEADER = "Content-Type: text/html" + NEWLINE;
+   Diary diary = new Diary();
+
+   public ClientHandler(Socket socket, Diary diary)
+   {
+      this.socket = socket;
+      this.diary = diary;
+   }
+
+   @Override
+   public void run()
+   {
+      System.out.println(HANDLERSTARTED);
+      handleRequest(this.socket);
+      System.out.println(HANDLERTERMINATED);
+
+   }
+
+   public void handleRequest(Socket socket)
+   {
+      try (BufferedReader in = new BufferedReader(
+              new InputStreamReader(socket.getInputStream()));)
+      {
+         String headerLine = in.readLine();
+         StringTokenizer tokenizer
+                 = new StringTokenizer(headerLine);
+         String httpMethod = tokenizer.nextToken();
+
+         if (httpMethod.equals("GET"))
+         {
+            System.out.println(GETPROCESSED);
+            // String httpQueryString = tokenizer.nextToken();
+            StringBuilder responseBuffer = new StringBuilder();
+            responseBuffer.append(WELCOME + " \r\n");
+            responseBuffer.append("Current Diary\r\n" + diary);
+            sendResponse(socket, 200, responseBuffer.toString());
+         }
+         else if (httpMethod.equals("POST"))
+         {
+            System.out.println("Post method processed");
+            //String httpQueryString = tokenizer.nextToken();
+            StringBuilder responseBuffer = new StringBuilder();
+            responseBuffer.append("Diary Updated\n");
+
+            String response = "";     // = in.toString
+            response = in.readLine();
             
-    public ClientHandler(Socket socket)
-    {
-        this.socket = socket;
-    }
+            System.out.println("Response is " + response);
 
-    @Override
-    public void run()
-    {
-        System.out.println(HANDLERSTARTED);
-        handleRequest(this.socket);
-        System.out.println(HANDLERTERMINATED);
-    }
+            diary.addDiary(response);
+            responseBuffer.append("Diary\r\n" + diary.toString());
+            sendResponse(socket, 200, responseBuffer.toString());
+         }
+         else
+         {
+            System.out.println("The HTTP method is not recognized");
+            sendResponse(socket, 405, "Method Not Allowed");
+         }in.close();
 
-    private void handleRequest(Socket socket)
-    {
-        try (BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));)
-        {
-            String headerLine = in.readLine();
-            StringTokenizer tokenizer = new StringTokenizer(headerLine);
-            String httpMethod = tokenizer.nextToken();
-            if(httpMethod.equals(HttpMethod.GET.name()))
-            {
-                processGetRequest(tokenizer);
-            }
-            else
-            {
-                System.out.println(UNRECOGNIZEDMETHOD);
-                sendResponse(socket, 405, METHODNOTALLOWED);
-            }
-        }
-        catch(Exception ex)
-        {
-            ex.printStackTrace();
-        }
-    }
+      } catch (Exception e)
+      {
+         e.printStackTrace();
+      }
 
-    private void processGetRequest(StringTokenizer tokenizer)
-    {
-        System.out.println(GETPROCESSED);
-        String httpQuery = tokenizer.nextToken();
-        StringBuilder responseBuffer = new StringBuilder();
-        responseBuffer.append(WELCOME);
-        sendResponse(socket,200,responseBuffer.toString());
-    }
+   }
 
-    public void sendResponse(Socket socket, int statusCode, String responseString)
-    {
-        //this seems dirty. Move response construction to its own object?
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());)
-        {
-            if (statusCode == 200)
-            {
-                out.writeBytes(String.format(STATUS,statusCode,OK) + NEWLINE);
-                out.writeBytes(SERVERHEADER);
-                out.writeBytes(CONTENTTYPEHEADER);
-                out.writeBytes(NEWLINE);
-                out.writeBytes(responseString);
-            }
-            else if (statusCode == 405)
-            {
-                out.writeBytes(String.format(STATUS,statusCode,METHODNOTALLOWED)+NEWLINE);
-                out.writeBytes(NEWLINE);
-            }
-            else
-            {
-                out.writeBytes(String.format(STATUS,NOTFOUNDCODE,NOTFOUND)+NEWLINE);
-                out.writeBytes(NEWLINE);
-            }
-            out.close();
-        }
-        catch (IOException ioEx)
-        {
-            ioEx.printStackTrace();
-        }
-    }
+   private void processGetRequest(StringTokenizer tokenizer)
+   {
+      System.out.println(GETPROCESSED);
+      String httpQuery = tokenizer.nextToken();
+      StringBuilder responseBuffer = new StringBuilder();
+      responseBuffer.append("Current Diary2");
+      responseBuffer.append(WELCOME);
+      responseBuffer.append("Current Diary");
+      sendResponse(socket, 200, responseBuffer.toString());
+   }
+
+   public void sendResponse(Socket socket, int statusCode, String responseString)
+   {
+      //this seems dirty. Move response construction to its own object?
+      try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());)
+      {
+         if (statusCode == 200)
+         {
+            out.writeBytes(String.format(STATUS, statusCode, OK) + NEWLINE);
+            out.writeBytes(SERVERHEADER);
+            out.writeBytes(CONTENTTYPEHEADER);
+            out.writeBytes(NEWLINE);
+            out.writeBytes(responseString);
+         }
+         else if (statusCode == 405)
+         {
+            out.writeBytes(String.format(STATUS, statusCode, METHODNOTALLOWED) + NEWLINE);
+            out.writeBytes(NEWLINE);
+         }
+         else
+         {
+            out.writeBytes(String.format(STATUS, NOTFOUNDCODE, NOTFOUND) + NEWLINE);
+            out.writeBytes(NEWLINE);
+         }
+         out.close();
+      } catch (IOException ioEx)
+      {
+         System.out.println(ioEx);
+         ioEx.printStackTrace();
+      }
+   }
 }
