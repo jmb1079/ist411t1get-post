@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package lab4team1;
 
 import java.io.BufferedReader;
@@ -13,14 +8,16 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
 
-/**
- *
- * @author Frederick A. Aaron
- */
 public class HTTPClient
 {
 
-   Scanner scnr = new Scanner(System.in);
+   public static void main(String[] args)
+   {
+      new HTTPClient();
+   }
+
+   private Scanner scnr = new Scanner(System.in);
+   private static final int PORTNUMBER = 8080;
 
    public HTTPClient()
    {
@@ -29,40 +26,37 @@ public class HTTPClient
       boolean quit = false;
 
       {
-         while (true)
+         while (!quit)
          {
             try
             {
                InetAddress serverInetAddress = InetAddress.getByName("127.0.0.1");
-               Socket connection = new Socket(serverInetAddress, 8080);
+               Socket connection = new Socket(serverInetAddress, PORTNUMBER);
                try (OutputStream out = connection.getOutputStream();
                        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream())))
                {
-                  //    while (!quit)
-                  //  {
-                  System.out.println("Enter 1 for GET and 2 for POST");
-                  String choice = (scnr.nextLine());
-                  if (choice.equals("1"))
+                  System.out.println("Enter 1 for GET, 2 for POST and 3 for quit");
+                  if (scnr.hasNextLine())
                   {
-                     System.out.println(" before sendGet");
-                     sendGet(out);
-                     System.out.println(getResponse(in));
-                  }
-                  else if (choice.equals("2"))
-                  {
-                     System.out.println("Enter Diary message");
-                     input = scnr.nextLine();
-                     if (!(input.equals("quit")))
+                     String choice = (scnr.nextLine());
+                     if (choice.equals("1"))
                      {
+                        sendGet(out);
+                        System.out.println(getResponse(in));
+                     }
+                     else if (choice.equals("2"))
+                     {
+                        System.out.println("Enter Diary message");
+                        input = scnr.nextLine();
                         sendPost(input, out);
                         System.out.println(getResponse(in));
                      }
-                     else
+                     else if (choice.equals("3"))
                      {
+                        System.out.println("Good Bye");
                         quit = true;
                      }
                   }
-                  //   }
                   in.close();
                }
             } catch (IOException ex)
@@ -77,22 +71,13 @@ public class HTTPClient
    {
       try
       {
-         System.out.println("at sendGet");
          out.write("GET /default\r\n".getBytes());
-         System.out.println("sendGet 2");
          out.write("User-Agent: Mozilla/5.0\r\n".getBytes());
          out.flush();
       } catch (IOException ex)
       {
-         System.out.println("4" + ex);
-
          ex.printStackTrace();
       }
-   }
-
-   public static void main(String[] args)
-   {
-      new HTTPClient();
    }
 
    private String getResponse(BufferedReader in)
@@ -108,9 +93,6 @@ public class HTTPClient
          return response.toString();
       } catch (IOException ex)
       {
-
-         System.out.println("1" + ex);
-
          ex.printStackTrace();
       }
       return "";
@@ -125,8 +107,21 @@ public class HTTPClient
       } catch (IOException ex)
       {
          ex.printStackTrace();
-         System.out.println("2" + ex);
-
       }
+   }
+
+   public Scanner getScnr()
+   {
+      return scnr;
+   }
+
+   public void setScnr(Scanner scnr)
+   {
+      this.scnr = scnr;
+   }
+
+   public int getPORTNUMBER()
+   {
+      return PORTNUMBER;
    }
 }

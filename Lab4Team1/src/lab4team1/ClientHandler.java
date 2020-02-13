@@ -23,18 +23,19 @@ public class ClientHandler implements Runnable
    private static final String HANDLERSTARTED = "\nClientHandler Started for ";
    private static final String HANDLERTERMINATED = "ClientHandler Terminated for ";
    private static final String GETPROCESSED = "Get method processed";
+   private static final String POSTPROCESSED = "Post method processed";
    private static final String UNRECOGNIZEDMETHOD = "The HTTP method is not recognized";
    private static final String WELCOME = "<html><h1>WebServer Home Page... </h1><br><b>Welcome to my web server!</b><br></html>";
    private static final String STATUS = "HTTP/1.0 %d %s";
    private static final String NEWLINE = "\r\n";
    private static final String METHODNOTALLOWED = "Method Not Allowed";
-   private static final String OK = "OK";
+   private static final String OK = "Message OK";
    private static final int NOTFOUNDCODE = 404;
    private static final String NOTFOUND = "NOT FOUND";
    private static final String CONTENTLENGTH = "Content-Length: ";
    private static final String SERVERHEADER = "Server: WebServer" + NEWLINE;
    private static final String CONTENTTYPEHEADER = "Content-Type: text/html" + NEWLINE;
-   Diary diary = new Diary();
+   private Diary diary = new Diary();
 
    public ClientHandler(Socket socket, Diary diary)
    {
@@ -48,7 +49,6 @@ public class ClientHandler implements Runnable
       System.out.println(HANDLERSTARTED);
       handleRequest(this.socket);
       System.out.println(HANDLERTERMINATED);
-
    }
 
    public void handleRequest(Socket socket)
@@ -60,38 +60,28 @@ public class ClientHandler implements Runnable
          StringTokenizer tokenizer
                  = new StringTokenizer(headerLine);
          String httpMethod = tokenizer.nextToken();
+         StringBuilder responseBuffer = new StringBuilder();
 
          if (httpMethod.equals("GET"))
          {
             System.out.println(GETPROCESSED);
-            // String httpQueryString = tokenizer.nextToken();
-            StringBuilder responseBuffer = new StringBuilder();
-            responseBuffer.append(WELCOME + " \r\n");
             responseBuffer.append("Current Diary\r\n" + diary);
-            sendResponse(socket, 200, responseBuffer.toString());
+            sendResponse(socket, 200, responseBuffer.toString(), "GET");
          }
          else if (httpMethod.equals("POST"))
          {
-            System.out.println("Post method processed");
-            //String httpQueryString = tokenizer.nextToken();
-            StringBuilder responseBuffer = new StringBuilder();
+            System.out.println(POSTPROCESSED);
             responseBuffer.append("Diary Updated\n");
-
-            String response = "";     // = in.toString
-            response = in.readLine();
-            
-            System.out.println("Response is " + response);
-
+            String response = in.readLine();
             diary.addDiary(response);
-            responseBuffer.append("Diary\r\n" + diary.toString());
-            sendResponse(socket, 200, responseBuffer.toString());
+            sendResponse(socket, 200, responseBuffer.toString(), "POST");
          }
          else
          {
             System.out.println("The HTTP method is not recognized");
-            sendResponse(socket, 405, "Method Not Allowed");
-         }in.close();
-
+            sendResponse(socket, 405, "Method Not Allowed", "405");
+         }
+         in.close();
       } catch (Exception e)
       {
          e.printStackTrace();
@@ -99,29 +89,30 @@ public class ClientHandler implements Runnable
 
    }
 
-   private void processGetRequest(StringTokenizer tokenizer)
+   public void sendResponse(Socket socket, int statusCode, String responseString, String command)
    {
-      System.out.println(GETPROCESSED);
-      String httpQuery = tokenizer.nextToken();
-      StringBuilder responseBuffer = new StringBuilder();
-      responseBuffer.append("Current Diary2");
-      responseBuffer.append(WELCOME);
-      responseBuffer.append("Current Diary");
-      sendResponse(socket, 200, responseBuffer.toString());
-   }
-
-   public void sendResponse(Socket socket, int statusCode, String responseString)
-   {
-      //this seems dirty. Move response construction to its own object?
       try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());)
       {
          if (statusCode == 200)
          {
-            out.writeBytes(String.format(STATUS, statusCode, OK) + NEWLINE);
-            out.writeBytes(SERVERHEADER);
-            out.writeBytes(CONTENTTYPEHEADER);
-            out.writeBytes(NEWLINE);
-            out.writeBytes(responseString);
+            if (command.equals("GET"))
+            {
+               out.writeBytes(String.format(STATUS, statusCode, OK) + NEWLINE);
+               out.writeBytes("Get Response Code : 200 ");
+               out.writeBytes(NEWLINE);
+               out.writeBytes("Get Reponse : " + OK + "\r\n");
+               out.writeBytes(NEWLINE);
+               out.writeBytes(responseString);
+            }
+            if (command.equals("POST"))
+            {
+               out.writeBytes(String.format(STATUS, statusCode, OK) + NEWLINE);
+               out.writeBytes("Post Response Code : 200 ");
+               out.writeBytes(NEWLINE);
+               out.writeBytes("Post Reponse : " + OK);
+               out.writeBytes(NEWLINE);
+            }
+
          }
          else if (statusCode == 405)
          {
@@ -136,8 +127,17 @@ public class ClientHandler implements Runnable
          out.close();
       } catch (IOException ioEx)
       {
-         System.out.println(ioEx);
          ioEx.printStackTrace();
       }
+   }
+
+   public Diary getDiary()
+   {
+      return diary;
+   }
+
+   public void setDiary(Diary diary)
+   {
+      this.diary = diary;
    }
 }

@@ -1,14 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package lab4team1;
-
 
 public class Diary
 {
-private String entry = "Begin\n-----\n";
+
+   private String entry = "Begin\n-----\n";
 
    public Diary()
    {
@@ -23,15 +18,26 @@ private String entry = "Begin\n-----\n";
    {
       this.entry = Entry;
    }
-   
-   public void addDiary(String addition){
-      entry += addition;
-      entry += "\r\n";
+
+   public void addDiary(String addition)
+   {
+      entry += (addition + "\r\n");
    }
-   
-@Override
-   public String toString(){
-      return(this.entry);
+
+   @Override
+   public String toString()
+   {
+      return (this.entry);
    }
-   
+
+   public String getEntry()
+   {
+      return entry;
+   }
+
+   public void setEntry(String entry)
+   {
+      this.entry = entry;
+   }
+
 }
