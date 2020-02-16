@@ -13,7 +13,6 @@ import java.io.IOException;
 
 public class Lab4Team1
 {
-
     /**
      * @param args the command line arguments
      * @throws java.io.IOException

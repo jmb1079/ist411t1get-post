@@ -37,7 +37,7 @@ public class WebServer
       Diary diary = new Diary();
       try (ServerSocket serverSocket = new ServerSocket(PORTNUMBER))
       {
-         while (true)
+        while (true)
          {
             System.out.println(WAITINGONCONNECTION);
             Socket remote = serverSocket.accept();
