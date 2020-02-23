@@ -9,13 +9,13 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 import java.util.stream.IntStream;
+import javafx.util.Pair;
 
 public class HTTPClient
 {
 
     private Scanner scnr;
-    private static InetAddress serverInetAddress;
-    private static final int PORTNUMBER = 8080;
+    private static Pair<InetAddress, Integer> CONNECTIONDETAILS;
     private static final String INVALIDENTRY = "An invalid selection was made";
     private static final String NEWLINE = "\r\n";
     private static final int[] validEntries =
@@ -34,18 +34,16 @@ public class HTTPClient
         scnr = new Scanner(System.in);
         try
         {
-            serverInetAddress = InetAddress.getByName("127.0.0.1");
+            CONNECTIONDETAILS = new Pair<>(InetAddress.getByName("127.0.0.1"), 8080);
         }
         catch (UnknownHostException uhEx)
         {
-            System.out.println("Unknown host");
             uhEx.printStackTrace();
         }
     }
 
     private void start()
     {
-        String input;
         System.out.println("HTTP Client Started");
         boolean quit = false;
         while (!quit)
@@ -61,29 +59,21 @@ public class HTTPClient
                     {
                         System.out.println(INVALIDENTRY + NEWLINE);
                     }
-                    else if (choice.equals(3))
-                    {
-                        System.out.println("Good Bye");
-                        quit = true;
-                    }
                     else
                     {
-                        Socket connection = new Socket(serverInetAddress, PORTNUMBER);
-                        try (OutputStream out = connection.getOutputStream();
-                                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream())))
+                        if (choice.equals(1))
                         {
-                            if (choice.equals(1))
-                            {
-                                sendGet(out);
-                                System.out.println(getResponse(in));
-                            }
-                            else if (choice.equals(2))
-                            {
-                                System.out.println("Enter Diary message");
-                                input = scnr.nextLine();
-                                sendPost(input, out);
-                                System.out.println(getResponse(in));
-                            }
+                            sendGetAndPrint();
+                        }
+                        else if (choice.equals(2))
+                        {
+                            sendPostAndPrint();
+                            sendGetAndPrint();
+                        }
+                        else if (choice.equals(3))
+                        {
+                            System.out.println("Good Bye");
+                            quit = true;
                         }
                     }
                 }
@@ -100,21 +90,40 @@ public class HTTPClient
         }
     }
 
-    private void sendGet(OutputStream out)
+    private void sendPostAndPrint() throws IOException
     {
-        try
+        String input;
+        System.out.println("Enter Diary message");
+        input = scnr.nextLine();
+        String postResponse = sendPost(input);
+        System.out.println(postResponse);
+    }
+
+    private void sendGetAndPrint() throws IOException
+    {
+        String getResponse = sendGet();
+        System.out.println(getResponse);
+    }
+
+    private String sendGet() throws IOException
+    {
+        Socket connection = new Socket(CONNECTIONDETAILS.getKey(), CONNECTIONDETAILS.getValue());
+        try (OutputStream out = connection.getOutputStream();
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream())))
         {
             out.write((HttpMethod.GET.toString() + " /default" + NEWLINE).getBytes());
             out.write(("User-Agent: Mozilla/5.0" + NEWLINE).getBytes());
             out.flush();
+            return getString(in);
         }
         catch (IOException ex)
         {
             ex.printStackTrace();
         }
+        return "";
     }
 
-    private String getResponse(BufferedReader in)
+    private String getString(BufferedReader in)
     {
         try
         {
@@ -133,17 +142,22 @@ public class HTTPClient
         return "";
     }
 
-    public void sendPost(String msg, OutputStream out)
+    public String sendPost(String msg) throws IOException
     {
-        try
+        Socket connection = new Socket(CONNECTIONDETAILS.getKey(), CONNECTIONDETAILS.getValue());
+        try (OutputStream out = connection.getOutputStream();
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream())))
         {
             out.write((HttpMethod.POST.toString() + " /default\r\n").getBytes());
             out.write((msg + "\r\n").getBytes());
+            out.flush();
+            return getString(in);
         }
         catch (IOException ex)
         {
             ex.printStackTrace();
         }
+        return "";
     }
 
     public Scanner getScnr()
@@ -154,10 +168,5 @@ public class HTTPClient
     public void setScnr(Scanner scnr)
     {
         this.scnr = scnr;
-    }
-
-    public int getPORTNUMBER()
-    {
-        return PORTNUMBER;
     }
 }
